@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload</title>
+
+  <style>
+    #progressBar {
+      width: 100%;
+      background-color: #f3f3f3;
+      border: 1px solid #ddd;
+      height: 30px;
+      margin-top: 10px;
+    }
+    #progressBar span {
+      display: block;
+      height: 100%;
+      background-color: green;
+      width: 0%;
+    }
+    #status {
+      margin-top: 10px;
+    }
+  </style>
+
+</head>
+<body>
+  <h1>Upload a File</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="text" id="apiUrl" value="http://localhost:3000/upload"/>
+    <input type="file" name="file" id="fileInput" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="uploadStatus"></div>
+  <div id="progressBar"><span></span></div>
+  <div id="status"></div>
+
+  <script>
+   const uploadForm = document.getElementById('uploadForm');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const progressBar = document.getElementById('progressBar').getElementsByTagName('span')[0];
+    const statusText = document.getElementById('status');
+
+    uploadForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(uploadForm);
+      const file = formData.get('file');
+
+      if (!file) {
+        uploadStatus.textContent = 'Please choose a file to upload.';
+        return;
+      }
+
+      uploadStatus.textContent = 'Uploading...';
+      progressBar.style.width = '0%'; // Reset progress bar
+
+      const xhr = new XMLHttpRequest();
+
+      // Track progress
+      xhr.upload.addEventListener('progress', function (e) {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percent + '%';
+          statusText.textContent = `Uploading... ${percent}%`;
+        }
+      });
+
+      // Handle response
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          uploadStatus.textContent = `File uploaded successfully! Filename: ${response.file.filename}`;
+          statusText.textContent = '';
+        } else {
+          uploadStatus.textContent = 'Error uploading file.';
+          statusText.textContent = '';
+        }
+      };
+
+      xhr.onerror = function () {
+        uploadStatus.textContent = 'An error occurred during the upload.';
+        statusText.textContent = '';
+      };
+
+      // Send the form data (file)
+      xhr.open('POST', document.getElementById('apiUrl').value, true);
+      xhr.send(formData);
+    });
+  </script>
+</body>
+</html>
